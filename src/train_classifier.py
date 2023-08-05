@@ -298,7 +298,7 @@ def main():
     - The file path of the pickle file to save the model to.
 
     Example Usage:
-    `python train_classifier.py ../data/DisasterResponse.db classifier.pkl`
+    `python3 train_classifier.py ../data/DisasterResponse.db classifier.pkl`
 
     Raises:
     Exception: If the number of command line arguments provided is not equal
@@ -319,7 +319,7 @@ def main():
         X_train, X_test, y_train, y_test = train_test_split(
                                                             X,
                                                             Y,
-                                                            test_size=0.2,
+                                                            test_size=0.3,
                                                             random_state=42)
         print("Building model ...")
         model = build_model()

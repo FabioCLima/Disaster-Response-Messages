@@ -1,22 +1,21 @@
 """
 process_data.py
 ===============
-This module is a part of a larger project structure designed to load, clean,
+This module is part of a larger project structure designed to load, clean,
 and save disaster response message data for further analysis and modeling.
-The project follows a clear directory
-structure:
+The module ensures that category columns contain only binary values (0 or 1),
+and drops any columns with other values, aligning with the requirements
+of a binary classification problem.
 
+The project follows a clear directory structure:
 - data: Contains raw and processed data. Raw data includes 'messages.csv' and
  'categories.csv'.
 - notebooks: Contains Jupyter notebooks for exploratory data analysis and
-model experimentation.
+  model experimentation.
 - images: Contains images, if any, used in the notebooks or reports.
 - reports: Contains files (likely Jupyter notebooks or markdown files) for
 reporting on the data analysis, model development, and evaluation.
 - models: Contains saved models.
-
-This script, 'process_data.py', is specifically responsible for preparing the
-data for analysis. It includes the following functions:
 
 Functions
 ---------
@@ -27,8 +26,10 @@ load_datasets(raw_data_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
     Load the messages and categories datasets from the specified raw data path.
 
 clean_data(messages: pd.DataFrame, categories: pd.DataFrame) -> pd.DataFrame:
-    Merge the messages and categories DataFrames and clean the resulting
-    DataFrame.
+    Merge the messages and categories DataFrames, clean the resulting
+    DataFrame,
+    check for binary values in category columns, and drop any non-binary
+    columns.
 
 save_data(df: pd.DataFrame, database_name: str) -> None:
     Save the DataFrame to an SQLite database.
@@ -37,17 +38,11 @@ main():
     Parse command line arguments and call the necessary functions to load,
     clean, and save the data.
 
-This script takes the file paths of the messages and categories datasets, and
-the name of a database to save the cleaned data to as command line arguments.
-It then loads the datasets, merges them, cleans the data, and stores it in the
-specified SQLite database.
-
 Example:
     Run the following command in the terminal to clean the data and save it to
     a database:
-
     python3 src/process_data.py data/raw/messages.csv
-            data/raw/categories.csv DisasterResponse
+    data/raw/categories.csv DisasterResponse
 """
 
 # Import necessary libraries
@@ -132,23 +127,22 @@ def clean_data(
                messages: pd.DataFrame,
                categories: pd.DataFrame
                ) -> pd.DataFrame:
-    """
-    Merges the messages and categories DataFrames and cleans the resulting
+    """Merges the messages and categories DataFrames and cleans the resulting
     DataFrame.
 
-    This function merges the input DataFrames on the 'id' column, then splits
-    the 'categories' column into separate columns for each category. Each
-    category column is then converted to a binary format.
-    The original 'categories' column is dropped, and the DataFrame with the
-    new category columns is returned.
+    This function merges the input DataFrames on the 'id' column, splits the
+    'categories' column into separate columns for each category, and converts
+    each category column to binary format.
+    It also checks for binary values in each category column, and drops any
+    columns containing values other than 0 or 1.
 
     Args:
         messages (pd.DataFrame): A DataFrame containing message data.
         categories (pd.DataFrame): A DataFrame containing category data.
 
     Returns:
-        pd.DataFrame: A DataFrame resulting from the merge and clean
-        operations.
+        pd.DataFrame: A DataFrame resulting from the merge, clean, and binary
+        check operations.
 
     Raises:
         ValueError: If a category value is found that can't be converted to an
@@ -156,7 +150,7 @@ def clean_data(
 
     Example:
         try:
-            cleaned_df = merge_and_clean_data(messages, categories)
+            cleaned_df = clean_data(messages, categories)
         except ValueError as e:
             print("Error occurred:", e)
     """
@@ -186,6 +180,12 @@ def clean_data(
                     Please check the data.")
             # Handle the error appropriately - here we just raise it further
             raise
+        # Check for binary values, drop the column if other values are found
+        unique_values = categories[column].unique()
+        if set(unique_values) - {0, 1}:
+            print(f"Dropping column '{column}' as it contains values other "
+                  "than 0 or 1.")
+            categories = categories.drop(column, axis=1)
 
     # Drop the original categories column from 'df'
     df = df.drop('categories', axis=1)
@@ -233,6 +233,28 @@ def save_data(df: pd.DataFrame, database_name: str) -> None:
 
 
 def main():
+    """Main function to execute the data processing steps.
+
+    This function parses command line arguments to obtain the paths for the
+    messages and categories datasets,and the name of the database to save the
+    cleaned data to. It then calls the necessary functions to load,clean, and
+    save the data. If the category columns contain values other than 0 or 1,
+    they will be dropped to ensure binary classification compatibility.
+
+    Command Line Arguments:
+        path_messages (str): Path to the messages CSV file.
+        path_categories (str): Path to the categories CSV file.
+        database_name (str): Name of the SQLite database to save the cleaned
+        data.
+
+    Returns:
+        None
+
+    Example:
+        Command to run the function from the terminal:
+        python3 src/process_data.py data/raw/messages.csv
+        data/raw/categories.csv DisasterResponse
+    """
     if len(sys.argv) == 4:
 
         path_messages, path_categories, database_name = sys.argv[1:]
@@ -263,10 +285,10 @@ def main():
 
     else:
         print('Error: Incorrect number of arguments provided.\n'
-              'Please provide the filepaths of the messages and categories'
-              'datasets as the first and second argument respectively and'
-              'the name of the database to save the cleaned data '
-              'to as the third argument.')
+              'Please provide the filepaths of the messages and categories '
+              ' datasets as the first and second argument respectively and '
+              ' the name of the database to save the cleaned data '
+              ' to as the third argument.')
         sys.exit(1)
 
 
