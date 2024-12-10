@@ -2,8 +2,6 @@
 
 In this project, I'll apply data engineering skills to analyze data from disaster to build a model for an API that classifies disaster messages.
 
-Apologies for any confusion. Here's an updated version of the README, incorporating all previously provided text.
-
 ---
 
 # Disaster Response Message Classifier
